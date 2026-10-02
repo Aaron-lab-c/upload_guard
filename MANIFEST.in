@@ -1,0 +1,5 @@
+include LICENSE README.md CHANGELOG.md SECURITY.md pyproject.toml
+recursive-include tests *.py
+recursive-include examples *.py *.ini *.txt
+recursive-include tools *.py
+global-exclude __pycache__ *.py[cod]

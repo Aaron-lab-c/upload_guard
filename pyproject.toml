@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "upload_guard"
+version = "0.1.0"
+description = "Pure-Python upload security validator: magic-number MIME sniffing, extension consistency, SVG XSS sanitizing, zip-bomb and path-traversal protection. Zero system dependencies."
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Aaron-lab-c" }]
+keywords = [
+    "upload", "security", "mime", "magic", "libmagic", "file-type", "sniff",
+    "svg", "xss", "zip-bomb", "path-traversal", "fastapi", "django", "flask",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.2",
+    "Framework :: Flask",
+    "Framework :: FastAPI",
+    "Topic :: Security",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+fastapi = ["fastapi>=0.100", "python-multipart", "httpx"]
+flask = ["flask>=2.0"]
+django = ["Django>=3.2"]
+all = ["fastapi>=0.100", "python-multipart", "httpx", "flask>=2.0", "Django>=3.2"]
+dev = [
+    "pytest>=7", "fastapi>=0.100", "python-multipart", "httpx", "flask>=2.0", "Django>=3.2",
+    "mypy", "ruff", "bandit", "build", "twine",
+]
+
+[project.scripts]
+upload_guard = "upload_guard.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Aaron-lab-c/upload_guard"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+upload_guard = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+addopts = "-q"
+filterwarnings = ["error::pytest.PytestUnraisableExceptionWarning"]
+
+[tool.ruff]
+line-length = 160
+target-version = "py38"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501", "B008", "B028", "B904"]  # B008: FastAPI's Depends()/File() defaults are idiomatic
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S108", "S324", "B011"]
+"examples/**" = ["S101", "S108"]
+"tools/**" = ["S102"]
+"src/upload_guard/security/svg.py" = ["S314", "S405"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_unused_configs = true
+ignore_missing_imports = true

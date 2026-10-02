@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    name: core (py${{ matrix.python }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        include:
+          - { os: windows-latest, python: "3.12" }
+          - { os: macos-latest, python: "3.12" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ matrix.python }}" }
+      - name: Install core only (no framework extras)
+        run: |
+          python -m pip install -U pip
+          pip install -e . pytest
+          python -c "import importlib.metadata as m; d=m.distribution('upload_guard'); assert not d.requires or all('extra ==' in r for r in d.requires), d.requires"
+      - run: python -c "import upload_guard; print(upload_guard.__version__)"
+      - run: pytest -q          # framework integration tests skip themselves when fastapi/flask/django are absent
+
+  frameworks:
+    name: ${{ matrix.extra }} (py${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.12", "3.13"]
+        extra: [fastapi, flask, django]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ matrix.python }}" }
+      - run: python -m pip install -U pip && pip install -e ".[${{ matrix.extra }}]" pytest
+      - run: pytest -q tests/test_integrations.py
+      - run: cd examples/${{ matrix.extra }}_app && pytest -q
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e ".[all]" ruff
+      - run: ruff check src tests examples tools
+      - run: python tools/readme_examples.py --check
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install build twine
+      - run: python -m build
+      - run: twine check --strict dist/*
+      - name: Install wheel in a clean venv and run the README quick start
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/pip install dist/*.whl
+          cd /tmp && /tmp/clean/bin/python "$GITHUB_WORKSPACE/tools/readme_examples.py" --run
