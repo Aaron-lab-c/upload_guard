@@ -1,3 +1,9 @@
+"""Framework integrations.
+
+Each framework test skips itself when that framework is not installed, so the
+module always collects at least the framework-free tests (pytest exits 5 when
+a whole module is skipped, which would fail CI jobs that install one extra).
+"""
 import io
 
 import pytest
@@ -5,9 +11,6 @@ import pytest
 from conftest import make_pdf, make_pe, make_png
 from upload_guard import UploadGuard, scan
 from upload_guard.integrations import http_status_for, problem_detail
-
-fastapi = pytest.importorskip("fastapi", reason="fastapi not installed")
-starlette_testclient = pytest.importorskip("fastapi.testclient", reason="fastapi testclient not installed")
 
 
 def test_http_status_mapping():
@@ -19,6 +22,8 @@ def test_http_status_mapping():
 
 
 def test_fastapi_integration():
+    pytest.importorskip("fastapi", reason="fastapi not installed")
+    pytest.importorskip("fastapi.testclient", reason="fastapi testclient (httpx) not installed")
     from fastapi import Depends, FastAPI, File, UploadFile
     from fastapi.testclient import TestClient
 
@@ -57,7 +62,7 @@ def test_fastapi_integration():
 
 
 def test_flask_integration():
-    pytest.importorskip("flask")
+    pytest.importorskip("flask", reason="flask not installed")
     from flask import Flask, request
 
     from upload_guard.integrations.flask import validate_upload
@@ -78,11 +83,11 @@ def test_flask_integration():
     r = client.post("/upload", data={"file": (io.BytesIO(make_pe()), "a.png")}, content_type="multipart/form-data")
     assert r.status_code == 415
     r = client.post("/upload", data={"file": (io.BytesIO(png), "../a.png")}, content_type="multipart/form-data")
-    assert r.status_code in (200, 422)  # werkzeug already strips the directory part
+    assert r.status_code == 422
 
 
 def test_django_integration():
-    django = pytest.importorskip("django")
+    django = pytest.importorskip("django", reason="django not installed")
     from django.conf import settings
 
     if not settings.configured:
@@ -102,7 +107,7 @@ def test_django_integration():
     bad = SimpleUploadedFile("a.png", make_pe(), content_type="image/png")
     with pytest.raises(ValidationError) as exc:
         validate_upload(bad, guard)
-    assert any("extension_mismatch" == e.code for e in exc.value.error_list)
+    assert any(e.code == "extension_mismatch" for e in exc.value.error_list)
 
     validator = UploadGuardValidator(guard)
     validator(SimpleUploadedFile("b.png", make_png()))

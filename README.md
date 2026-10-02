@@ -3,7 +3,7 @@
 **Pure-Python upload validation: real file-type detection, extension consistency, SVG XSS sanitising, zip-bomb and path-traversal protection — with zero system dependencies.**
 
 [![PyPI](https://img.shields.io/pypi/v/upload_guard.svg)](https://pypi.org/project/upload_guard/)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue)
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 `python-magic` needs `libmagic` (`.so` / `.dll`) and breaks on Alpine, distroless images and Windows dev boxes. Most back-ends also forget that an "image" can be a PHP web-shell, that SVGs run JavaScript, and that a 40 KB zip can expand to 4 PB. `upload_guard` fixes all of that in one call, using only the standard library.
@@ -65,7 +65,7 @@ Everything runs with hard limits on bytes read, elements parsed and decompressed
 pip install upload_guard
 ```
 
-No compiled extensions, no `libmagic`, no third-party runtime dependencies. Python 3.8+.
+No compiled extensions, no `libmagic`, no third-party runtime dependencies. Python 3.9+ (the setuptools>=77 build backend needs 3.9; the wheel itself is pure Python).
 
 ## Usage
 
